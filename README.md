@@ -9,6 +9,7 @@ author: milismsft
 
   Azure Container Instance sample for managing container instances.
      - Create an Azure container group with two container instances using Docker images "microsoft/aci-helloworld" and "microsoft/aci-tutorial-sidecar"
+     - Set the container group restart policy to "never"
      - Test that the container app can be reached via "curl" like HTTP GET calls
      - Retrieve container log content
      - Delete the container group resource
