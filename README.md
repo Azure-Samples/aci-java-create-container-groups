@@ -4,12 +4,12 @@ languages:
 - java
 products:
 - azure
-services: Containerinstance
-platforms: java
-author: yaohaizh
+extensions:
+- services: Containerinstance
+- platforms: java
 ---
 
-## Getting Started with Containerinstance - Manage Container Instance With Multiple Container Images - in Java ##
+# Getting Started with Containerinstance - Manage Container Instance With Multiple Container Images - in Java #
 
 
   Azure Container Instance sample for managing container instances.
