@@ -4,9 +4,8 @@ languages:
 - java
 products:
 - azure
-extensions:
-- services: Containerinstance
-- platforms: java
+description: "Azure Container Instance sample for managing container instances."
+urlFragment: aci-java-create-container-groups
 ---
 
 # Getting Started with Containerinstance - Manage Container Instance With Multiple Container Images - in Java #
