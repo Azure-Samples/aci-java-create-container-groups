@@ -5,8 +5,8 @@ languages:
 products:
 - azure
 extensions:
-- services: Containerinstance
-- platforms: java
+  services: Containerinstance
+  platforms: java
 ---
 
 # Getting Started with Containerinstance - Manage Container Instance With Multiple Container Images - in Java #
