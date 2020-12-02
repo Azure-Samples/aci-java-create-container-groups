@@ -1,20 +1,21 @@
-/**
- * Copyright (c) Microsoft Corporation. All rights reserved.
- * Licensed under the MIT License. See License.txt in the project root for
- * license information.
- */
+// Copyright (c) Microsoft Corporation. All rights reserved.
+// Licensed under the MIT License.
 
-package com.microsoft.azure.management.containerinstance.samples;
+package com.azure.resourcemanager.containerinstance.samples;
 
-import com.microsoft.azure.management.Azure;
-import com.microsoft.azure.management.containerinstance.ContainerGroup;
-import com.microsoft.azure.management.containerinstance.ContainerGroupRestartPolicy;
-import com.microsoft.azure.management.resources.fluentcore.arm.Region;
-import com.microsoft.azure.management.resources.fluentcore.utils.SdkContext;
-import com.microsoft.azure.management.samples.Utils;
-import com.microsoft.rest.LogLevel;
+import com.azure.core.credential.TokenCredential;
+import com.azure.core.http.policy.HttpLogDetailLevel;
+import com.azure.core.management.AzureEnvironment;
+import com.azure.identity.DefaultAzureCredentialBuilder;
+import com.azure.resourcemanager.AzureResourceManager;
+import com.azure.resourcemanager.containerinstance.models.ContainerGroup;
+import com.azure.resourcemanager.containerinstance.models.ContainerGroupRestartPolicy;
+import com.azure.core.management.Region;
+import com.azure.core.management.profile.AzureProfile;
+import com.azure.resourcemanager.resources.fluentcore.utils.ResourceManagerUtils;
+import com.azure.resourcemanager.samples.Utils;
 
-import java.io.File;
+import java.time.Duration;
 
 /**
  * Azure Container Instance sample for managing container instances.
@@ -28,12 +29,12 @@ public class ManageContainerInstanceWithMultipleContainerImages {
     /**
      * Main function which runs the actual sample.
      *
-     * @param azure instance of the azure client
+     * @param azureResourceManager instance of the azure client
      * @return true if sample runs successfully
      */
-    public static boolean runSample(Azure azure) {
-        final String rgName = SdkContext.randomResourceName("rgACI", 15);
-        final String aciName = SdkContext.randomResourceName("acisample", 20);
+    public static boolean runSample(AzureResourceManager azureResourceManager) {
+        final String rgName = Utils.randomResourceName(azureResourceManager, "rgACI", 15);
+        final String aciName = Utils.randomResourceName(azureResourceManager, "acisample", 20);
         final String containerImageName1 = "microsoft/aci-helloworld";
         final String containerImageName2 = "microsoft/aci-tutorial-sidecar";
 
@@ -41,7 +42,7 @@ public class ManageContainerInstanceWithMultipleContainerImages {
             //=============================================================
             // Create a container group with two container instances
 
-            ContainerGroup containerGroup = azure.containerGroups().define(aciName)
+            ContainerGroup containerGroup = azureResourceManager.containerGroups().define(aciName)
                 .withRegion(Region.US_WEST)
                 .withNewResourceGroup(rgName)
                 .withLinux()
@@ -70,32 +71,29 @@ public class ManageContainerInstanceWithMultipleContainerImages {
 
             // warm up
             System.out.println("Warming up " + containerGroup.ipAddress());
-            Utils.curl("http://" + containerGroup.ipAddress());
-            SdkContext.sleep(15000);
+            Utils.sendGetRequest("http://" + containerGroup.ipAddress());
+            ResourceManagerUtils.sleep(Duration.ofSeconds(15));
             System.out.println("CURLing " + containerGroup.ipAddress());
-            System.out.println(Utils.curl("http://" + containerGroup.ipAddress()));
+            System.out.println(Utils.sendGetRequest("http://" + containerGroup.ipAddress()));
 
             //=============================================================
             // Check the container instance logs
 
             String logContent = containerGroup.getLogContent(aciName + "-1");
-            System.out.format("Logs for container instance: %s\n%s", aciName + "-1", logContent);
+            System.out.format("Logs for container instance: %s%n%s", aciName + "-1", logContent);
             logContent = containerGroup.getLogContent(aciName + "-2");
-            System.out.format("Logs for container instance: %s\n%s", aciName + "-2", logContent);
+            System.out.format("Logs for container instance: %s%n%s", aciName + "-2", logContent);
 
             //=============================================================
             // Remove the container group
 
-            azure.containerGroups().deleteById(containerGroup.id());
+            azureResourceManager.containerGroups().deleteById(containerGroup.id());
 
             return true;
-        } catch (Exception f) {
-            System.out.println(f.getMessage());
-            f.printStackTrace();
         } finally {
             try {
                 System.out.println("Deleting Resource Group: " + rgName);
-                azure.resourceGroups().beginDeleteByName(rgName);
+                azureResourceManager.resourceGroups().beginDeleteByName(rgName);
                 System.out.println("Deleted Resource Group: " + rgName);
             } catch (NullPointerException npe) {
                 System.out.println("Did not create any resources in Azure. No clean up is necessary");
@@ -103,7 +101,6 @@ public class ManageContainerInstanceWithMultipleContainerImages {
                 g.printStackTrace();
             }
         }
-        return false;
     }
 
     /**
@@ -116,17 +113,21 @@ public class ManageContainerInstanceWithMultipleContainerImages {
             //=============================================================
             // Authenticate
 
-            final File credFile = new File(System.getenv("AZURE_AUTH_LOCATION"));
+            final AzureProfile profile = new AzureProfile(AzureEnvironment.AZURE);
+            final TokenCredential credential = new DefaultAzureCredentialBuilder()
+                .authorityHost(profile.getEnvironment().getActiveDirectoryEndpoint())
+                .build();
 
-            Azure azure = Azure.configure()
-                .withLogLevel(LogLevel.BODY)
-                .authenticate(credFile)
+            AzureResourceManager azureResourceManager = AzureResourceManager
+                .configure()
+                .withLogLevel(HttpLogDetailLevel.BASIC)
+                .authenticate(credential, profile)
                 .withDefaultSubscription();
 
             // Print selected subscription
-            System.out.println("Selected subscription: " + azure.subscriptionId());
+            System.out.println("Selected subscription: " + azureResourceManager.subscriptionId());
 
-            runSample(azure);
+            runSample(azureResourceManager);
         } catch (Exception e) {
             System.out.println(e.getMessage());
             e.printStackTrace();
